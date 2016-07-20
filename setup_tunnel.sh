@@ -1,12 +1,13 @@
 #!/bin/bash
 
-SRC_IP=$(ip -4 addr show dev eno1 | grep -oP "(?<=inet ).*(?=/)")
 DST_IP=${DST_IP:-$1}
 
 if [[ -z "${DST_IP}" ]]; then
     echo "No destination IP specified"
     exit 1
 fi
+
+SRC_IP=$(ip ro get ${DST_IP} | grep -oP "(?<=src ).*(?= )")
 
 sudo iptables -I INPUT -p gre -s "${DST_IP}" -j ACCEPT
 

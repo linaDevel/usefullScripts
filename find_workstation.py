@@ -2,7 +2,23 @@
 import paramiko
 import threading
 import getpass
+import socket
+import struct
 import sys
+import re
+
+IP_REGEX = re.compile(
+    "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\.){3}"
+    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])/([0-2]?\\d|3[0-2])$"
+)
+
+
+def ip2long(ip):
+    return struct.unpack(">I", socket.inet_aton(ip))[0]
+
+
+def long2ip(long):
+    return socket.inet_ntoa(struct.pack(">I", long))
 
 
 class SSHThread(threading.Thread):
@@ -35,11 +51,16 @@ class SSHThread(threading.Thread):
             pass
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        for i in range(2, 126):
-            USER = getpass.getuser()
-            PASSWORD = getpass.getpass()
+    NETWORK = sys.argv[1] if len(sys.argv) >= 2 else raw_input("Network: ")
 
-            SSHThread("%s.%s" % (sys.argv[1], i), USER, PASSWORD).start()
+    if IP_REGEX.match(NETWORK):
+        NET, CIDR = NETWORK.split("/")
+        USER = getpass.getuser()
+        PASSWORD = getpass.getpass()
+
+        NET_LONG = ip2long(NET)
+
+        for NET_SHIFT in range(2, (2 ** (32 - int(CIDR))) - 1):
+            SSHThread(long2ip(NET_LONG + NET_SHIFT), USER, PASSWORD).start()
     else:
-        print "No network specified"
+        print "Invalid network: '%s'" % NETWORK
