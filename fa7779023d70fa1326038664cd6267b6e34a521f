@@ -1,0 +1,9 @@
+Code-Review+2: Alexey Deryugin <aderyugin@mirantis.com>
+Workflow+1: Alexey Deryugin <aderyugin@mirantis.com>
+Quality-Assurance+1: Nemesis CI <nemesis@lina-infra.ru>
+Verified+2: Nemesis CI <nemesis@lina-infra.ru>
+Submitted-by: Nemesis CI <nemesis@lina-infra.ru>
+Submitted-at: Thu, 21 Jul 2016 15:27:59 +0300
+Reviewed-on: https://review.lina-infra.ru/274
+Project: linaDevel/usefullScripts
+Branch: refs/heads/master
