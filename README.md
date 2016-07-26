@@ -9,3 +9,4 @@ Some usefull scripts
  * ***tmpdir*** - create temp directory and open shell, automatically remove on shell exit.
  * ***compiz_helper.py*** - manage Compiz wallpaper for multiple workspaces. Set from folder, order by brightness.
  * ***viewport_monitor.py*** - monitors current Compiz viewport and updates Unity greeter to current wallpaper.
+ * ***sync_git.sh*** - sync OpenStack repositories to given Git server
