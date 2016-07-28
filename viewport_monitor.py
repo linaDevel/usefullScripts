@@ -40,7 +40,7 @@ if __name__ == "__main__":
     xsize, ysize = get_screen_size()
 
     wpp = ctx.Plugins['wallpaper']
-    cscreen = 0
+    cscreen = -1
 
     while True:
         xoff, yoff = get_screen_offset()
@@ -51,4 +51,6 @@ if __name__ == "__main__":
             print cwall
             set_wallpaper(cwall)
             cscreen = screen
+            thread.sleep(2)
+
         time.sleep(0.5)
