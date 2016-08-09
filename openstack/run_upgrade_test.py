@@ -30,12 +30,33 @@ ENV_NODES = {
     'slave-06': ['compute', 'ceph-osd']
 }
 
+MASTER_REPO_URL = "http://mirror.seed-cz1.fuel-infra.org/mos-repos/" \
+                  "centos/mos9.0-centos7/snapshots/" \
+                  "proposed-2016-08-08-112322/x86_64/"
+
 MIRROR_URL = "http://mirror.seed-cz1.fuel-infra.org/mos-repos/" \
              "ubuntu/snapshots/9.0-2016-08-08-094723/"
 
 MIRRORS = ['mos9.0', 'mos9.0-holdback', 'mos9.0-hotfix',
            'mos9.0-proposed', 'mos9.0-security', 'mos9.0-updates']
 
+UPGRADE_CMDS = [
+   "yum-config-manager --add-repo %s" % MASTER_REPO_URL,
+
+   "sed -i 's/priority=15/#priority=15/g' "
+   "/etc/yum.repos.d/9.0_auxiliary.repo",
+
+   "wget -O - https://review.openstack.org/cat/346119%2C2%2Cutils/"
+   "updates/update-master-node.sh%5E0 | zcat | bash | "
+   "tee /var/log/upgrade.log",
+
+   "for manifest in $(find /etc/puppet/modules/ -name tasks.yaml |"
+   " xargs grep puppet_manifest | awk '{ print $3 }'); "
+   "do echo \"Package<| |> { ensure => 'latest' }\" >> $manifest; "
+   "done",
+
+   "fuel rel --sync-deployment-tasks --dir /etc/puppet"
+]
 # End of Environment Settings
 
 ENV = EnvironmentModel(None)
@@ -69,6 +90,12 @@ FUEL_WEB.run_ostf(cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
 with FUEL_WEB.get_ssh_for_node('slave-01') as remote:
     assert radosgw_started(remote), 'radosgw daemon started'
+
+for command in UPGRADE_CMDS:
+    assert_true(self.ssh_manager.execute_on_remote(
+        ip=self.ssh_manager.admin_ip,
+        cmd=command
+    )['exit_code'] == 0, 'master node upgrade: "%s"' % command)
 
 attrs = FUEL_WEB.client.get_cluster_attributes(cluster_id)
 for mirror in MIRRORS:
