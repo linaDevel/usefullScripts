@@ -51,6 +51,6 @@ if __name__ == "__main__":
             print cwall
             set_wallpaper(cwall)
             cscreen = screen
-            thread.sleep(2)
+            time.sleep(2)
 
         time.sleep(0.5)

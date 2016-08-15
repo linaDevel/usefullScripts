@@ -6,8 +6,11 @@ TMPGEM=$(mktemp -p ${TMPROOT} -d gem.XXXXXX)
 git clone $1 ${TMPDIR}
 
 pushd ${TMPDIR}
+
 export GEM_HOME=${TMPGEM}
-$(getent passwd ${USER} | cut -d: -f7)
+export WORKSPACE=${TMPDIR}
+
+$(getent passwd ${USER} | cut -d: -f7) --login
 popd
 
 rm -rf ${TMPDIR}
