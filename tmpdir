@@ -1,9 +1,9 @@
 #!/bin/bash
-TMPDIR=$(mktemp -d)
+TMPROOT=/develop/tmp
+TMPDIR=$(mktemp -p ${TMPROOT} -d shell.XXXXXX)
 
 pushd ${TMPDIR}
 $(getent passwd ${USER} | cut -d: -f7)
-
 popd
 
 rm -rf ${TMPDIR}
