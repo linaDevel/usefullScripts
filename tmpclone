@@ -1,17 +1,31 @@
 #!/bin/bash
 TMPROOT=/develop/tmp
+
+WITH_RUBY=${WITH_RUBY:-"false"}
+RUBY_PATH=${RUBY_PATH:-""}
+
 TMPDIR=$(mktemp -p ${TMPROOT} -d git.XXXXXX)
-TMPGEM=$(mktemp -p ${TMPROOT} -d gem.XXXXXX)
 
 git clone $1 ${TMPDIR}
 
 pushd ${TMPDIR}
 
-export GEM_HOME=${TMPGEM}
+if [[ "x${WITH_RUBY}" == "xtrue" ]]; then
+    TMPGEM=$(mktemp -p ${TMPROOT} -d gem.XXXXXX)
+    export GEM_HOME=${TMPGEM}
+    export PATH="${PATH}:${GEM_HOME}/bin"
+    if [[ -n "${RUBY_PATH}" ]]; then
+        export PATH="${RUBY_PATH}:${PATH}"
+    fi
+    gem install bundle
+fi
+
 export WORKSPACE=${TMPDIR}
 
 $(getent passwd ${USER} | cut -d: -f7) --login
 popd
 
 rm -rf ${TMPDIR}
-rm -rf ${TMPGEM}
+if [[ "x${WITH_RUBY}" == "xtrue" ]]; then
+    rm -rf ${TMPGEM}
+fi
