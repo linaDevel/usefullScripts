@@ -1,5 +1,7 @@
 #!/bin/bash
 TMPROOT=/develop/tmp
+RUBYPATH=/develop/ruby2.1/bin
+
 TMPDIR=$(mktemp -p ${TMPROOT} -d git.XXXXXX)
 TMPGEM=$(mktemp -p ${TMPROOT} -d gem.XXXXXX)
 
@@ -8,10 +10,13 @@ git clone $1 ${TMPDIR}
 pushd ${TMPDIR}
 
 export GEM_HOME=${TMPGEM}
+export PATH="${RUBYPATH}:${PATH}:${GEM_HOME}/bin"
 export WORKSPACE=${TMPDIR}
 
+gem install bundle
 $(getent passwd ${USER} | cut -d: -f7) --login
 popd
 
 rm -rf ${TMPDIR}
 rm -rf ${TMPGEM}
+
