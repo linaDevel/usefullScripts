@@ -1,7 +1,30 @@
 from PIL import Image
 import compizconfig
+import pickle
 import time
 import os
+
+
+def spiral(n):
+    def spiral_part(x, y, n):
+        if x == -1 and y == 0:
+            return -1
+        if y == (x+1) and x < (n // 2):
+            return spiral_part(x-1, y-1, n-1) + 4*(n-y)
+        if x < (n-y) and y <= x:
+            return spiral_part(y-1, y, n) + (x-y) + 1
+        if x >= (n-y) and y <= x:
+            return spiral_part(x, y-1, n) + 1
+        if x >= (n-y) and y > x:
+            return spiral_part(x+1, y, n) + 1
+        if x < (n-y) and y > x:
+            return spiral_part(x, y-1, n) - 1
+
+    array = [[0] * n for j in xrange(n)]
+    for x in xrange(n):
+        for y in xrange(n):
+            array[x][y] = spiral_part(y, x, n)
+    return array
 
 
 class ImageBrightness:
@@ -43,24 +66,42 @@ class CompizHelper():
         return wallpapers
 
     def calculate_brightness(self, file):
-        image = Image.open(file)
-        image = image.convert("L")
-        w, h = image.size
-        summ = 0
-        for x in range(w):
-            for y in range(h):
-                summ += image.getpixel((x, y))
-        return ImageBrightness(file, float(summ) / (w * h))
+        if os.path.exists("%s.bness" % file):
+            return ImageBrightness(
+                file, pickle.loads(
+                    open("%s.bness" % file, 'r').read()
+                )
+            )
+        else:
+            image = Image.open(file)
+            image = image.convert("L")
+            w, h = image.size
+            summ = 0
+            for x in range(w):
+                for y in range(h):
+                    summ += image.getpixel((x, y))
+            open("%s.bness" % file, 'w').write(pickle.dumps(
+                float(summ) / (w * h)
+            ))
+
+            return ImageBrightness(file, float(summ) / (w * h))
+
+    def order_wallapapers_by_brightness(self, files, reverse=False):
+        wallpapers = []
+        for file_path in files:
+            if os.path.isfile(file_path):
+                if os.path.splitext(file_path)[1].lower() in ['.jpg', '.png']:
+                    wallpapers.append(self.calculate_brightness(file_path))
+        wallpapers.sort(reverse=reverse)
+        return wallpapers
 
     def set_wallpapers_from_folder_ordered(self, path, reverse=False):
         wallpapers = []
         if os.path.exists(path) and os.path.isdir(path):
-            for file in os.listdir(path):
-                abs_path = os.path.abspath(os.path.join(path, file))
-                if os.path.isfile(abs_path):
-                    if os.path.splitext(file)[1].lower() in ['.jpg', '.png']:
-                        wallpapers.append(self.calculate_brightness(abs_path))
-        wallpapers.sort(reverse=reverse)
+            wallpapers = self.order_wallapapers_by_brightness(            
+                os.listdir(path), reverse
+            )
+           
         self.set_wallpapers_from_array(
             [wallpaper.file for wallpaper in wallpapers]
         )
@@ -71,16 +112,34 @@ class CompizHelper():
         return screen['bg_image'].Value
 
     def sort_wallpapers(self, reverse=False):
-        wallpapers = []
-        for file_path in self.list_wallpapers():
-            if os.path.isfile(file_path):
-                if os.path.splitext(file_path)[1].lower() in ['.jpg', '.png']:
-                    wallpapers.append(self.calculate_brightness(file_path))
-        wallpapers.sort(reverse=reverse)
+        wallpapers = self.order_wallapapers_by_brightness(
+            self.list_wallpapers(), reverse=reverse
+        )
         self.set_wallpapers_from_array(
             [wallpaper.file for wallpaper in wallpapers]
         )
         return wallpapers
+
+    def spiral_wallpapers(self, reverse=False, left=False, top=False):
+        wallpapers = self.order_wallapapers_by_brightness(
+            self.list_wallpapers(), reverse=reverse
+        )
+
+        import math
+        n = int(math.sqrt(len(wallpapers)))
+
+        order = spiral(n)
+        print order
+
+        ordered = []
+        for y in (range(0, n) if top else range(n - 1, -1, -1)):
+            for x in (range(0, n) if left else range(n - 1, -1, -1)):
+                ordered.append(wallpapers[order[y][x]])
+
+        self.set_wallpapers_from_array(
+            [wallpaper.file for wallpaper in ordered]
+        )
+        return ordered
 
     def commit(self):
         self.context.Write()
@@ -97,6 +156,14 @@ if __name__ == "__main__":
     parser.add_argument(
         '-r', '--reverse',
         action="store_true", help="Order image directly or reverse ordered"
+    )
+    parser.add_argument(
+        '-l', '--left',
+        action="store_true", help="Order image left or right spiral"
+    )
+    parser.add_argument(
+        '-t', '--top',
+        action="store_true", help="Order image top or bottom spiral"
     )
 
     args = parser.parse_args()
@@ -118,6 +185,12 @@ if __name__ == "__main__":
     elif args.action == "sort":
         print "Sorting wallpapers"
         for wallpaper in ch.sort_wallpapers(args.reverse):
+            print "\t%s" % wallpaper
+    elif args.action == "spiral":
+        print "Sorting wallpapers"
+        for wallpaper in ch.spiral_wallpapers(
+            args.reverse, args.left, args.top
+        ):
             print "\t%s" % wallpaper
     else:
         print "Unknown action '%s'" % args.action
