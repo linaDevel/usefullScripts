@@ -39,7 +39,6 @@ if __name__ == "__main__":
 
     xsize, ysize = get_screen_size()
 
-    wpp = ctx.Plugins['wallpaper']
     cscreen = -1
 
     while True:
@@ -47,6 +46,7 @@ if __name__ == "__main__":
         x, y = xoff / xsize, yoff / ysize
         screen = x + y * hsize
         if not screen == cscreen:
+            wpp = ctx.Plugins['wallpaper']
             cwall = wpp.Screen['bg_image'].Value[screen]
             print cwall
             set_wallpaper(cwall)
